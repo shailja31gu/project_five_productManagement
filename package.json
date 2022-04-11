@@ -10,8 +10,12 @@
   "author": "Group-03",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1111.0",
+    "bcrypt": "^5.0.1",
     "body-parser": "^1.20.0",
     "express": "^4.17.3",
-    "mongoose": "^6.2.10"
+    "mongoose": "^6.2.10",
+    "multer": "^1.4.4",
+    "nodemon": "^2.0.15"
   }
 }
