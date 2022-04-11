@@ -1,7 +1,6 @@
 const userModel = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcrypt");
-// const bcyrpt = require('bcrypt');
 const aws = require("aws-sdk");
 
 const saltRounds = 10;
@@ -125,7 +124,7 @@ const registerUser = async function (req, res) {
         if (files && files.length > 0) {
             profileImage = await uploadFile(files[0])
         }
-        else { res.status(400).send({ message: "No file found" }) }
+        else {  return res.status(400).send({ message: "No file found" }) }
         const hash = bcrypt.hashSync(password, saltRounds)
         const updatedData = {
             "fname": fname,
@@ -137,7 +136,7 @@ const registerUser = async function (req, res) {
             "profileImage": profileImage,
         }
         let user = await userModel.create(updatedData)
-        res.status(201).send({ status: true, message: "user registered succesfully", data: user })
+         return res.status(201).send({ status: true, message: "user registered succesfully", data: user })
     }
     catch (err) {
         return res.status(500).send({ status: "false", message: err.message })
@@ -196,7 +195,7 @@ const userLogin = async (req, res) => {
 
         const isMatched = await bcrypt.compare(password, user.password);
         if (!isMatched) {
-            return res.status(401).send({ status: false, message: "p" });
+            return res.status(401).send({ status: false, message: "Password not matched" });
         }
         const token = jwt.sign({
             userId: user._id
@@ -226,12 +225,14 @@ const getUser = async (req, res) => {
             return
         }
 
-        const isPresent = await userModel.findById({ _id: id })
+        const userDetails = await userModel.findOne({ id })
+            .select({ address: 1, _id: 1, fname: 1, lname: 1, email: 1, profileImage: 1, phone: 1, password: 1 })
 
-        if (!isPresent) return res.status(404).send({ status: false, message: "user not found" })
-
-        const user = await userModel.findOne({id}).select({address: 1, _id: 1, fname:1,lname:1,email:1,profileImage:1,phone:1,password:1})
-        return res.status(200).send({ status: true, message: 'user profile details', data: user })
+        if (!userDetails) return res.status(404).send({ status: false, message: "user not found" })
+        if (req.user != userDetails._id) {
+            return res.status(401).send({ status: false, message: "You are not authorized" })
+        }
+        return res.status(200).send({ status: true, message: 'User profile details', data: userDetails })
 
     }
     catch (err) {
