@@ -103,19 +103,20 @@ const registerUser = async function (req, res) {
             return res.status(400).send({ status: false, message: "Invalid request parameters, Shipping address cannot be empty" })
         }
         if (billing) {
-            let { street, city, pincode } = billing
-            if (street) {
-                if (!isValid(street)) {
+            // let { street, city, pincode } = billing
+            
+            if (billing.street) {
+                if (!isValid(billing.street)) {
                     return res.status(400).send({ status: false, message: 'billing Street Required' })
                 }
             }
-            if (city) {
-                if (!isValid(city)) {
+            if (billing.city) {
+                if (!isValid(billing.city)) {
                     return res.status(400).send({ status: false, message: 'Shipping city is Required' });
                 }
             }
-            if (pincode) {
-                if (!isValid(pincode)) {
+            if (billing.pincode) {
+                if (!isValid(billing.pincode)) {
                     return res.status(400).send({ status: false, message: 'Shipping pincode Required' });
                 }
             }
@@ -240,8 +241,51 @@ const getUser = async (req, res) => {
 
 }
 
+const updateUserDetalis = async (req, res) => {
 
-module.exports = { userLogin, registerUser, getUser }
+try{
+    const data = req.body
+    const file = req.file
+    const id = req.params.userId
+    
+
+
+    
+
+    if(!isValidObjectId(_id)){
+        res.status(400).send({ status: false, message: '${_id} id is not a valid userId' })
+        return
+    }
+    if(!Object.keys(data).length > 0) return res.send({status: false, message: 'enter data for validation'})
+    if(!Object.keys(file).length > 0) return res.send({status: false, message: 'enter data for validation'})
+    const userPresent = await userModel.findById({_id:id})
+
+    if(!userPresent) return res.status(404).send({status:false, message: 'user not found'})
+
+    const {fname,lname,address} = data   
+     const updateDetails = {}
+
+     if(isValid(fname)) {
+        if(!Object.prototype.hasOwnProperty.call(updateDetails, '$set')) updateDetails['$set']={}
+        updateDetails['$set']['fname']= fname
+    }
+
+    const update = await userModel.findOneAndUpdate({ _id: id, isDeleted: false }, { $set: data }, {new: true})
+     
+    if(!update) return res.status(400).send({status: false, message:' User is deleted'})
+
+    const updateUser = await userModel.find({_id:_id}).select({fname: 1,lname: 1,email:1,profileImage: 1,phone: 1,password: 1,address: 1 })
+    
+    return res.status(200).send({status: true, message:'user profile updated', data: updateUser})
+
+}
+catch(error){
+    return res.status(500).send({ status: false, message: error.message})
+}
+}
+
+
+module.exports = { userLogin, registerUser, getUser,updateUserDetalis }
 
 
 // bcrypt.compare(myPlaintextPassword, hash, function(err, res) {
