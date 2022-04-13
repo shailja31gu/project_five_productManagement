@@ -104,7 +104,7 @@ const registerUser = async function (req, res) {
         }
         if (billing) {
             // let { street, city, pincode } = billing
-            
+
             if (billing.street) {
                 if (!isValid(billing.street)) {
                     return res.status(400).send({ status: false, message: 'billing Street Required' })
@@ -196,11 +196,12 @@ const getUser = async (req, res) => {
             res.status(400).send({ status: false, message: '${id} is not a valid user id' })
             return
         }
-
-        const userDetails = await userModel.findOne({ _id: id })
+        const userDetails = await userModel.findOne({ _id: id, isDeleted: false })
             .select({ address: 1, _id: 1, fname: 1, lname: 1, email: 1, profileImage: 1, phone: 1, password: 1 })
 
-        if (!userDetails) return res.status(404).send({ status: false, message: "user not found" })
+        if (!userDetails) {
+            return res.status(404).send({ status: false, message: "user not found" })
+        }
         if (req.user != id) {
             return res.status(401).send({ status: false, message: "You are not authorized" })
         }
@@ -218,7 +219,7 @@ const updateUser = async function (req, res) {
         if (!isValidObjectId(userId)) {
             return res.status(400).send({ status: false, message: ' invalid user id' })
         }
-        const userFound = await userModel.findOne({ _id: userId })
+        const userFound = await userModel.findOne({ _id: userId , isDeleted: false})
         if (!userFound) {
             return res.status(400).send({ status: false, message: 'no user exist with such user id' })
         }
@@ -316,20 +317,20 @@ const updateUser = async function (req, res) {
                 profileImage = await uploadFile(files[0])
             }
         }
-            const updatedUser = await userModel.findOneAndUpdate({ _id: userId }, {
-                $set: {
-                    fname: fname,
-                    lname: lname,
-                    email: email,
-                    phone: phone,
-                    password: hash,
-                    address: address,
-                    profileImage: profileImage,
-                }
-            }, { new: true })
-            return res.status(200).send({ status: true, message: "user updated succesfully", data: updatedUser })
-        }
-    
+        const updatedUser = await userModel.findOneAndUpdate({ _id: userId }, {
+            $set: {
+                fname: fname,
+                lname: lname,
+                email: email,
+                phone: phone,
+                password: hash,
+                address: address,
+                profileImage: profileImage,
+            }
+        }, { new: true })
+        return res.status(200).send({ status: true, message: "user updated succesfully", data: updatedUser })
+    }
+
 
     catch (err) {
         return res.status(500).send({ status: false, message: err.message })

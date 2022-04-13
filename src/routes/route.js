@@ -5,15 +5,18 @@ const productController = require('../controllers/productController')
 const { authorisation } = require('../middleware/authorization');
 
 
-
+// User Api----
 router.post('/register', userController.registerUser);
 router.post('/login', userController.userLogin);
-router.get('/user/:userId',authorisation, userController.getUser)
-router.put('/user/:userId',authorisation,userController.updateUser)
+router.get('/user/:userId', authorisation, userController.getUser)
+router.put('/user/:userId/profile', authorisation, userController.updateUser)
 
+// Product Api-----
 router.post('/products', productController.createProduct);
-router.get('/products/:productId',productController.getproductList)
-// router.put('/products/:productId',productController.updateProduct)
+router.get('/products', productController.getAllProducts)
+router.get('/products/:productId', productController.getProduct)
+router.put('/products/:productId', productController.updateProductData)
+router.delete('/products/:productId', productController.deleteProduct)
 
 
 module.exports = router;
