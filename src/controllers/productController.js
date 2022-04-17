@@ -191,7 +191,7 @@ const getAllProducts = async (req, res) => {
                 if (products.length === 0) {
                     return res.status(404).send({ status: false, message: "No products found" })
                 }
-                res.status(200).send({ status: true, message: "Success", data: products })
+                return res.status(200).send({ status: true, message: "Success", data: products })
             }
         }
         const products = await productModel.find(filterQuery)
@@ -199,7 +199,7 @@ const getAllProducts = async (req, res) => {
         if (products.length === 0) {
             return res.status(404).send({ status: false, message: "No products found" })
         }
-        res.status(200).send({ status: true, message: "Success", data: products })
+        return res.status(200).send({ status: true, message: "Success", data: products })
 
     } catch (error) {
         return res.status(500).send({ status: false, message: error.message });
@@ -216,7 +216,7 @@ const getProduct = async (req, res) => {
             return
         }
         const productDetail = await productModel.findOne({ _id: id, isDeleted: false })
-            .select({ isDeleted: 0, createdAt: 0, updatedAt: 0, __v: 0 })
+            .select({ isDeleted: 0,deletedAt:0, createdAt: 0, updatedAt: 0, __v: 0 })
 
         if (!productDetail) return res.status(404).send({ status: false, message: "product not found" })
 

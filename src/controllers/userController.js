@@ -177,7 +177,7 @@ const userLogin = async (req, res) => {
         }
         const token = jwt.sign({
             userId: user._id
-        }, 'Group03', { expiresIn: 60 * 60 });
+        }, 'Group03', { expiresIn: '4h' });
         res.setHeader("Authorization", token);
 
         return res.status(200).send({ 'status': true, message: "User login successfull", data: { userId: user._id, token } });
@@ -193,7 +193,7 @@ const getUser = async (req, res) => {
         const id = req.params.userId
 
         if (!isValidObjectId(id)) {
-            res.status(400).send({ status: false, message: '${id} is not a valid user id' })
+            res.status(400).send({ status: false, message: `${id} is not a valid user id` })
             return
         }
         const userDetails = await userModel.findOne({ _id: id, isDeleted: false })
@@ -211,133 +211,193 @@ const getUser = async (req, res) => {
         return res.status(500).send({ status: false, message: err.message })
     }
 }
-////////////////////...........update user..........................................................
+////////////////////...........update User profile..........................................................
 
-const updateUser = async function (req, res) {
+const updateProfile = async (req, res) => {
     try {
-        const userId = req.params.userId
+        const userId = req.params.userId;
+        const userData = req.body;
+        const files = req.files;
+
         if (!isValidObjectId(userId)) {
-            return res.status(400).send({ status: false, message: ' invalid user id' })
+            return res.status(400).send({ status: false, message: "please provide valid userId" });
         }
-        const userFound = await userModel.findOne({ _id: userId , isDeleted: false})
-        if (!userFound) {
-            return res.status(400).send({ status: false, message: 'no user exist with such user id' })
-        }
-        if (userFound._id != req.user) {
-            return res.status(401).send({ status: false, message: 'Unauthorized user to upade the profile' })
-        }
-        const userData = req.body
-        const files = req.files
 
-        let { fname, lname, email, phone, password, address, profileImage } = userData
-        if (fname) {
+        const isUserIdPresent = await userModel.findOne({ _id: userId, isDeleted: false });
+        if (!isUserIdPresent) {
+            return res.status(404).send({ status: false, message: `User data not found with this Id ${userId}` });
+        }
+        if (req.user != isUserIdPresent._id) {
+            return res.status(401).send({ status: false, message: "You are not authorized" })
+        }
+        let { fname, lname, email, phone, password, address, profileImage } = userData;
+
+
+        const updateUserData = {};
+        if ("fname" in req.body) {
             if (!isValid(fname)) {
-                { return res.status(400).send({ status: "false", message: "Please enter first name" }) }
+                return res.status(400).send({ status: false, message: "fname is required" })
             }
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
+            }
+            updateUserData['$set']['fname'] = fname
         }
-        if (lname) {
+        if ("lname" in req.body) {
             if (!isValid(lname)) {
-                { return res.status(400).send({ status: "false", message: "Please enter last name" }) }
+                return res.status(400).send({ status: false, message: "lname is required" })
             }
-        }
-        if (email) {
-            if (!isValid(email)) {
-                { return res.status(400).send({ status: "false", message: "Please enter first name" }) }
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
             }
+            updateUserData['$set']['lname'] = lname
 
+        }
+        if ("email" in req.body) {
+            if (!isValid(email)) {
+                return res.status(400).send({ status: false, message: "email is required" })
+            }
             if (!/^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(email)) {
-                return res.status(400).send({ status: false, message: `Email should be a valid email address` });
+                return res.status(400).send({ status: false, message: "Please provide valid email" })
             }
             let duplicateEmail = await userModel.findOne({ email: email })
             if (duplicateEmail) {
-                return res.status(400).send({ status: false, message: `Email Already Exist` });
+                return res.status(400).send({ status: false, message: `Email Already Present. Take another email` });
             }
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
+            }
+            updateUserData['$set']['email'] = email
         }
-        if (phone) {
+        if ("phone" in req.body) {
             if (!isValid(phone)) {
-                return res.status(400).send({ status: false, message: "Invalid request parameter, please provide Phone" });
+                return res.status(400).send({ status: false, message: "phone is required" })
             }
-            if (!/^(?:(?:\+|0{0,2})91(\s*[\-]\s*)?|[0]?)?[6789]\d{9}$/.test(phone)) {
-                return res.status(400).send({ status: false, message: `Mobile should be a valid number` });
+            if (!phoneRegex.test(phone)) {
+                return res.status(400).send({ status: false, message: "Please provide valid phone" })
             }
             let duplicatePhone = await userModel.findOne({ phone: phone })
             if (duplicatePhone) {
-                return res.status(400).send({ status: false, message: `Phone Number Already Present` });
+                return res.status(400).send({ status: false, message: `Phone Already Present. Take another Phone Number` });
             }
-        }
-        if (password) {
-            if (!isValid(password)) { return res.status(400).send({ status: "false", message: "Please enter a valid password" }) }
-            if (!(password.length >= 8 && password.length <= 15)) {
-                return res.status(400).send({ status: false, message: "Password should be Valid min 8 and max 15 " });
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
             }
-            var hash = bcrypt.hashSync(password, saltRounds)
+            updateUserData['$set']['phone'] = phone
         }
-        if (address) {
+        if ("password" in req.body) {
+            if (!isValid(password)) {
+                return res.status(400).send({ status: false, message: "password is required" })
+            }
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
+            }
+            const hash = bcrypt.hashSync(password, saltRounds)
+            updateUserData['$set']['password'] = hash
+        }
+        if ("address" in req.body) {
+            if (!isValid(address)) {
+                return res.status(400).send({ status: false, message: "address is required" })
+            }
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
+            }
+            updateUserData['$set']['address'] = address
             address = JSON.parse(address)
-
-            if (address.shipping) {
-                if (address.shipping.street) {
-                    if (!isValid(address.shipping.street)) {
-                        return res.status(400).send({ status: false, message: 'Shipping Street Required' });
-                    }
+            let { shipping, billing } = address;
+            if ("shipping" in address) {
+                if (!isValid(shipping)) {
+                    return res.status(400).send({ status: false, message: "shipping address is required" })
                 }
-
-                if (address.shipping.city) {
-                    if (!isValid(address.shipping.city)) {
-                        return res.status(400).send({ status: false, message: 'Shipping city is Required' });
-                    }
+                if (!('$set' in updateUserData)) {
+                    updateUserData["$set"] = {};
                 }
-                if (address.shipping.pincode) {
-                    if (!isValid(address.shipping.pincode)) {
-                        return res.status(400).send({ status: false, message: 'Shipping pincode Required' });
+                updateUserData['$set']['shipping'] = shipping
+                // shipping = JSON.parse(shipping)
+                const { street, city, pincode } = shipping;
+                if ("street" in shipping) {
+                    if (!isValid(street)) {
+                        return res.status(400).send({ status: false, message: "street is required" })
                     }
+                    if (!('$set' in updateUserData)) {
+                        updateUserData["$set"] = {};
+                    }
+                    updateUserData['$set']['street'] = street
+                }
+                if ("city" in shipping) {
+                    if (!isValid(city)) {
+                        return res.status(400).send({ status: false, message: "city is required" })
+                    }
+                    if (!('$set' in updateUserData)) {
+                        updateUserData["$set"] = {};
+                    }
+                    updateUserData['$set']['city'] = city
+                }
+                if ("pincode" in shipping) {
+                    if (!isValid(pincode)) {
+                        return res.status(400).send({ status: false, message: "pincode is required" })
+                    }
+                    if (!('$set' in updateUserData)) {
+                        updateUserData["$set"] = {};
+                    }
+                    updateUserData['$set']['pincode'] = pincode
                 }
             }
-            if (address.billing) {
-                if (address.billing.street) {
-                    if (!isValid(address.billing.street)) {
-                        return res.status(400).send({ status: false, message: 'billing Street Required' })
-                    }
+            if ("billing" in address) {
+                if (!isValid(billing)) {
+                    return res.status(400).send({ status: false, message: "shipping address is required" })
                 }
-                if (address.billing.city) {
-                    if (!isValid(address.billing.city)) {
-                        return res.status(400).send({ status: false, message: 'billing city is Required' });
-                    }
+                if (!('$set' in updateUserData)) {
+                    updateUserData["$set"] = {};
                 }
-                if (address.billing.pincode) {
-                    if (!isValid(address.billing.pincode)) {
-                        return res.status(400).send({ status: false, message: 'billing pincode Required' });
+                updateUserData['$set']['billing'] = billing
+                const { street, city, pincode } = billing;
+                if ("street" in billing) {
+                    if (!isValid(street)) {
+                        return res.status(400).send({ status: false, message: "street is required" })
                     }
+                    if (!('$set' in updateUserData)) {
+                        updateUserData["$set"] = {};
+                    }
+                    updateUserData['$set']['street'] = street
+                }
+                if ("city" in billing) {
+                    if (!isValid(city)) {
+                        return res.status(400).send({ status: false, message: "city is required" })
+                    }
+                    if (!('$set' in updateUserData)) {
+                        updateUserData["$set"] = {};
+                    }
+                    updateUserData['$set']['city'] = city
+                }
+                if ("pincode" in billing) {
+                    if (!isValid(pincode)) {
+                        return res.status(400).send({ status: false, message: "pincode is required" })
+                    }
+                    if (!('$set' in updateUserData)) {
+                        updateUserData["$set"] = {};
+                    }
+                    updateUserData['$set']['pincode'] = pincode
                 }
             }
         }
 
-        if (files) {
-            if (files.length > 0) {
-                profileImage = await uploadFile(files[0])
+        if (files && files.length > 0) {
+            const imageUrl = await uploadFile(files[0])
+            if (!('$set' in updateUserData)) {
+                updateUserData["$set"] = {};
             }
-        }
-        const updatedUser = await userModel.findOneAndUpdate({ _id: userId }, {
-            $set: {
-                fname: fname,
-                lname: lname,
-                email: email,
-                phone: phone,
-                password: hash,
-                address: address,
-                profileImage: profileImage,
-            }
-        }, { new: true })
-        return res.status(200).send({ status: true, message: "user updated succesfully", data: updatedUser })
-    }
+            updateUserData['$set']['profileImage'] = imageUrl
+        } //else {
+        // return res.status(400).send({ message: "No file found" });
+        // }
+        const updatedData = await userModel.findOneAndUpdate({ _id: userId }, updateUserData, { new: true })
+        res.status(200).send({ status: true, message: "User profile updated", data: updatedData })
 
-
-    catch (err) {
-        return res.status(500).send({ status: false, message: err.message })
+    } catch (error) {
+        return res.status(500).send({ status: false, message: error.message });
     }
 }
 
-
-
-module.exports = { userLogin, registerUser, getUser, updateUser }
+module.exports = { userLogin, registerUser, getUser, updateProfile }
 
