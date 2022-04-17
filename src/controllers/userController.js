@@ -3,9 +3,9 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require("bcrypt");
 const aws = require("aws-sdk");
 
-const saltRounds = 10;
+const saltRounds = 10;  //
 const { isValid, isValidRequestBody, isValidObjectId } = require('../validator/validator');
-const { hash } = require('bcrypt');
+const { hash } = require('bcrypt');  //
 
 
 const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
@@ -47,10 +47,10 @@ const registerUser = async function (req, res) {
     try {
         const userData = req.body
         const files = req.files
-        if (Object.keys(userData).length = 0) { return res.status(400).send({ status: "false", message: "Please ptovide required input fields" }) }
+        if (Object.keys(userData).length = 0) { return res.status(400).send({ status: "false", message: "Please provide required input fields" }) }
         let { fname, lname, email, phone, password, address } = userData
         if (!isValid(fname)) { return res.status(400).send({ status: "false", message: "Please enter first name" }) }
-        if (!isValid(lname)) { return res.status(400).send({ status: "false", message: "Please enter last" }) }
+        if (!isValid(lname)) { return res.status(400).send({ status: "false", message: "Please enter last name" }) }
         if (!isValid(email)) { return res.status(400).send({ status: "false", message: "Please enter email" }) }
 
         if (!/^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(email)) {
@@ -75,7 +75,7 @@ const registerUser = async function (req, res) {
         if (!(password.length >= 8 && password.length <= 15)) {
             return res.status(400).send({ status: false, message: "Password should be Valid min 8 and max 15 " });
         }
-        address = JSON.parse(address)
+        address = JSON.parse(address)  //
         if (Object.keys(address).length = 0) {
             return res.status(400).send({ status: false, message: "Address is required" });
         }
@@ -124,20 +124,21 @@ const registerUser = async function (req, res) {
             return res.status(400).send({ status: false, message: "Invalid request parameters, billing address cannot be empty" })
         }
         if (files && files.length > 0) {
-            profileImage = await uploadFile(files[0])
+            imageUrl = await uploadFile(files[0])
+        
         }
         else { return res.status(400).send({ message: "No file found" }) }
-        const hash = bcrypt.hashSync(password, saltRounds)
-        const updatedData = {
+        const hash = bcrypt.hashSync(password, saltRounds)  //
+        const createdData = {
             "fname": fname,
             "lname": lname,
             "email": email,
             "phone": phone,
             "password": hash,
             "address": address,
-            "profileImage": profileImage,
+            "profileImage": imageUrl,
         }
-        let user = await userModel.create(updatedData)
+        let user = await userModel.create(createdData)
         return res.status(201).send({ status: true, message: "user registered succesfully", data: user })
     }
     catch (err) {
@@ -193,7 +194,7 @@ const getUser = async (req, res) => {
         const id = req.params.userId
 
         if (!isValidObjectId(id)) {
-            res.status(400).send({ status: false, message: '${id} is not a valid user id' })
+            res.status(400).send({ status: false, message: `${id} is not a valid user id` })
             return
         }
         const userDetails = await userModel.findOne({ _id: id, isDeleted: false })
@@ -221,7 +222,7 @@ const updateUser = async function (req, res) {
         }
         const userFound = await userModel.findOne({ _id: userId , isDeleted: false})
         if (!userFound) {
-            return res.status(400).send({ status: false, message: 'no user exist with such user id' })
+            return res.status(404).send({ status: false, message: 'no user exist with such user id' })
         }
         if (userFound._id != req.user) {
             return res.status(401).send({ status: false, message: 'Unauthorized user to upade the profile' })
