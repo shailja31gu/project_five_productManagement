@@ -2,15 +2,12 @@ const userModel = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcrypt");
 const aws = require("aws-sdk");
-
-const saltRounds = 10;
-const { isValid, isValidRequestBody, isValidObjectId } = require('../validator/validator');
+// const uploadFile = require('../util/awsConfig');
+const { isValid, isValidRequestBody, isValidObjectId } = require('../util/validator');
 const { hash } = require('bcrypt');
-
-
-const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-//const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,15}$/
-
+const saltRounds = 10;
+const emailRegex = /^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/
+const phoneRegex = /^(?:(?:\+|0{0,2})91(\s*[\-]\s*)?|[0]?)?[6789]\d{9}$/
 
 //---------AWS S3..............................................................
 aws.config.update(
@@ -47,13 +44,13 @@ const registerUser = async function (req, res) {
     try {
         const userData = req.body
         const files = req.files
-        if (Object.keys(userData).length = 0) { return res.status(400).send({ status: "false", message: "Please ptovide required input fields" }) }
+        if (!isValidRequestBody(userData)) { return res.status(400).send({ status: "false", message: "Please ptovide required input fields" }) }
         let { fname, lname, email, phone, password, address } = userData
         if (!isValid(fname)) { return res.status(400).send({ status: "false", message: "Please enter first name" }) }
         if (!isValid(lname)) { return res.status(400).send({ status: "false", message: "Please enter last" }) }
         if (!isValid(email)) { return res.status(400).send({ status: "false", message: "Please enter email" }) }
 
-        if (!/^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(email)) {
+        if (!emailRegex.test(email)) {
             return res.status(400).send({ status: false, message: `Email should be a valid email address` });
         }
         let duplicateEmail = await userModel.findOne({ email: email })
@@ -64,7 +61,7 @@ const registerUser = async function (req, res) {
         if (!isValid(phone)) {
             return res.status(400).send({ status: false, message: "Invalid request parameter, please provide Phone" });
         }
-        if (!/^(?:(?:\+|0{0,2})91(\s*[\-]\s*)?|[0]?)?[6789]\d{9}$/.test(phone)) {
+        if (!phoneRegex.test(phone)) {
             return res.status(400).send({ status: false, message: `Mobile should be a valid number` });
         }
         let duplicatePhone = await userModel.findOne({ phone: phone })
@@ -103,20 +100,19 @@ const registerUser = async function (req, res) {
             return res.status(400).send({ status: false, message: "Invalid request parameters, Shipping address cannot be empty" })
         }
         if (billing) {
-            // let { street, city, pincode } = billing
-
-            if (billing.street) {
-                if (!isValid(billing.street)) {
+            let { street, city, pincode } = billing
+            if (street) {
+                if (!isValid(street)) {
                     return res.status(400).send({ status: false, message: 'billing Street Required' })
                 }
             }
-            if (billing.city) {
-                if (!isValid(billing.city)) {
+            if (city) {
+                if (!isValid(city)) {
                     return res.status(400).send({ status: false, message: 'Shipping city is Required' });
                 }
             }
-            if (billing.pincode) {
-                if (!isValid(billing.pincode)) {
+            if (pincode) {
+                if (!isValid(pincode)) {
                     return res.status(400).send({ status: false, message: 'Shipping pincode Required' });
                 }
             }
@@ -257,7 +253,7 @@ const updateProfile = async (req, res) => {
             if (!isValid(email)) {
                 return res.status(400).send({ status: false, message: "email is required" })
             }
-            if (!/^\w+([\.-]?\w+)@\w+([\.-]?\w+)(\.\w{2,3})+$/.test(email)) {
+            if (!emailRegex.test(email)) {
                 return res.status(400).send({ status: false, message: "Please provide valid email" })
             }
             let duplicateEmail = await userModel.findOne({ email: email })

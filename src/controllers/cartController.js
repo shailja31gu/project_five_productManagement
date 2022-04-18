@@ -1,7 +1,7 @@
 const cartModel = require('../models/cartModel');
 const userModel = require('../models/userModel');
 const productModel = require('../models/productModel');
-const { isValid, isValidRequestBody, isValidObjectId } = require('../validator/validator');
+const { isValid, isValidRequestBody, isValidObjectId } = require('../util/validator');
 
 const addToCart = async (req, res) => {
     try {

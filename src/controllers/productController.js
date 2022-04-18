@@ -1,7 +1,8 @@
 const productModel = require("../models/productModel")
-const { isValid, isValidRequestBody, isValidObjectId } = require('../validator/validator')
+const { isValid, isValidRequestBody, isValidObjectId } = require('../util/validator');
 const currencySymbol = require("currency-symbol-map")
-const aws = require("aws-sdk")
+const aws = require("aws-sdk");
+// const uploadFile = require('../util/awsConfig');
 
 
 //---------AWS S3..............................................................
