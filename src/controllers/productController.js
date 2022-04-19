@@ -1,8 +1,7 @@
 const productModel = require("../models/productModel")
-const { isValid, isValidRequestBody, isValidObjectId } = require('../validator/validator')
+const { isValid, isValidRequestBody, isValidObjectId } = require('../util/validator');
 const currencySymbol = require("currency-symbol-map")
-const aws = require("aws-sdk")
-
+const aws = require("aws-sdk");
 
 //---------AWS S3..............................................................
 aws.config.update(
@@ -215,11 +214,15 @@ const getProduct = async (req, res) => {
         const id = req.params.productId
 
         if (!isValidObjectId(id)) {
+<<<<<<< HEAD
             res.status(400).send({ status: false, message: `${id} is not a valid product id` })
+=======
+            res.status(400).send({ status: false, message: `${id} is not a valid productId` })
+>>>>>>> 8b601782c94fb81055f2dd187beadd28f4297b62
             return
         }
         const productDetail = await productModel.findOne({ _id: id, isDeleted: false })
-            .select({ isDeleted: 0,deletedAt:0, createdAt: 0, updatedAt: 0, __v: 0 })
+            .select({ isDeleted: 0, deletedAt: 0, createdAt: 0, updatedAt: 0, __v: 0 })
 
         if (!productDetail) return res.status(404).send({ status: false, message: "product not found" })
 
@@ -238,7 +241,13 @@ const updateProductData = async (req, res) => {
         if (!isValidObjectId(productId)) {
             return res.status(400).send({ status: false, message: "please provide valid productId" });
         }
+<<<<<<< HEAD
         if (!Object.keys(productData).length > 0) return res.status(400).send({status: false, message:"Please enter data for updation"})
+=======
+        if (!isValidRequestBody(productData)) {
+            return res.status(400).send({ status: false, message: "Please provide product details to update" });
+        }
+>>>>>>> 8b601782c94fb81055f2dd187beadd28f4297b62
 
         const isproductIdPresent = await productModel.findOne({ _id: productId, isDeleted: false });
         if (!isproductIdPresent) {
@@ -332,7 +341,7 @@ const updateProductData = async (req, res) => {
             if (!('$set' in updateProductData)) {
                 updateProductData["$set"] = {};
             }
-            updateProductData['$set']['availableSizes'] = availableSizes  // addtoset can be used
+            updateProductData['$set']['availableSizes'] = availableSizes  
         }
         if ("installments" in productData) {
             if (!isValid(installments)) {
