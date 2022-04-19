@@ -83,6 +83,9 @@ const createProduct = async function (req, res) {
                 return res.status(400).send({ status: false, message: 'isFreeShipping must be a boolean value' })
             }
         }
+        if (!isValid(style)) {
+            return res.status(400).send({ status: false, message: 'Style is required' })
+        }
         if (installments) {
             if (!isValid(installments)) {
                 return res.status(400).send({ status: false, message: "please enter installments" })
@@ -123,7 +126,7 @@ const createProduct = async function (req, res) {
             }
 
             if (Array.isArray(sizeArray)) {
-                newProductData['availableSizes'] = sizeArray
+                newProductData['availableSizes'] = sizeArray  //
             }
         }
         const saveProductDetails = await productModel.create(newProductData)
@@ -191,7 +194,7 @@ const getAllProducts = async (req, res) => {
                 if (products.length === 0) {
                     return res.status(404).send({ status: false, message: "No products found" })
                 }
-                res.status(200).send({ status: true, message: "Success", data: products })
+                return res.status(200).send({ status: true, message: "Success", data: products })
             }
         }
         const products = await productModel.find(filterQuery)
@@ -199,7 +202,7 @@ const getAllProducts = async (req, res) => {
         if (products.length === 0) {
             return res.status(404).send({ status: false, message: "No products found" })
         }
-        res.status(200).send({ status: true, message: "Success", data: products })
+        return res.status(200).send({ status: true, message: "Success", data: products })
 
     } catch (error) {
         return res.status(500).send({ status: false, message: error.message });
@@ -212,11 +215,11 @@ const getProduct = async (req, res) => {
         const id = req.params.productId
 
         if (!isValidObjectId(id)) {
-            res.status(400).send({ status: false, message: '${id} is not a valid product id' })
+            res.status(400).send({ status: false, message: `${id} is not a valid product id` })
             return
         }
         const productDetail = await productModel.findOne({ _id: id, isDeleted: false })
-            .select({ isDeleted: 0, createdAt: 0, updatedAt: 0, __v: 0 })
+            .select({ isDeleted: 0,deletedAt:0, createdAt: 0, updatedAt: 0, __v: 0 })
 
         if (!productDetail) return res.status(404).send({ status: false, message: "product not found" })
 
@@ -235,6 +238,7 @@ const updateProductData = async (req, res) => {
         if (!isValidObjectId(productId)) {
             return res.status(400).send({ status: false, message: "please provide valid productId" });
         }
+        if (!Object.keys(productData).length > 0) return res.status(400).send({status: false, message:"Please enter data for updation"})
 
         const isproductIdPresent = await productModel.findOne({ _id: productId, isDeleted: false });
         if (!isproductIdPresent) {
