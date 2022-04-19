@@ -244,7 +244,7 @@ const getCart = async (req, res) => {
             return res.status(404).send({ status: false, message: "cart not found" })
         }
         if (req.user != id) {
-            return res.status(401).send({ status: false, message: "You are not authorized" })
+            return res.status(403).send({ status: false, message: "You are not authorized" })
         }
         return res.status(200).send({ status: true, message: 'cart details', data: cartDetails })
     } catch (error) {
@@ -265,7 +265,7 @@ const deleteCart = async (req, res) => {
             return res.status(404).send({ status: false, message: 'user not found' })
         }
         if (req.user != userId) {
-            return res.status(401).send({ status: false, message: "You are not authorized" })
+            return res.status(403).send({ status: false, message: "You are not authorized" })
         }
         const cartFound = await cartModel.findOne({ userId: userId })
         if (!cartFound) {

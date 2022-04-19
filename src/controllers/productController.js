@@ -2,8 +2,6 @@ const productModel = require("../models/productModel")
 const { isValid, isValidRequestBody, isValidObjectId } = require('../util/validator');
 const currencySymbol = require("currency-symbol-map")
 const aws = require("aws-sdk");
-// const uploadFile = require('../util/awsConfig');
-
 
 //---------AWS S3..............................................................
 aws.config.update(
@@ -213,11 +211,11 @@ const getProduct = async (req, res) => {
         const id = req.params.productId
 
         if (!isValidObjectId(id)) {
-            res.status(400).send({ status: false, message: '${id} is not a valid product id' })
+            res.status(400).send({ status: false, message: `${id} is not a valid productId` })
             return
         }
         const productDetail = await productModel.findOne({ _id: id, isDeleted: false })
-            .select({ isDeleted: 0,deletedAt:0, createdAt: 0, updatedAt: 0, __v: 0 })
+            .select({ isDeleted: 0, deletedAt: 0, createdAt: 0, updatedAt: 0, __v: 0 })
 
         if (!productDetail) return res.status(404).send({ status: false, message: "product not found" })
 
@@ -235,6 +233,9 @@ const updateProductData = async (req, res) => {
 
         if (!isValidObjectId(productId)) {
             return res.status(400).send({ status: false, message: "please provide valid productId" });
+        }
+        if (!isValidRequestBody(productData)) {
+            return res.status(400).send({ status: false, message: "Please provide product details to update" });
         }
 
         const isproductIdPresent = await productModel.findOne({ _id: productId, isDeleted: false });
@@ -329,7 +330,7 @@ const updateProductData = async (req, res) => {
             if (!('$set' in updateProductData)) {
                 updateProductData["$set"] = {};
             }
-            updateProductData['$set']['availableSizes'] = availableSizes  // addtoset can be used
+            updateProductData['$set']['availableSizes'] = availableSizes  
         }
         if ("installments" in productData) {
             if (!isValid(installments)) {

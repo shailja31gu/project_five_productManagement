@@ -7,28 +7,28 @@ const { isValid, isValidRequestBody, isValidObjectId } = require('../util/valida
 const createOrder = async function (req, res) {
     try {
 
-        if (!isValidObjectId(req.params.userId)) return res.status(400).send({ status: false, msg: 'enter a valid objectId in params' })
+        if (!isValidObjectId(req.params.userId)) return res.status(400).send({ status: false, message: 'enter a valid objectId in params' })
 
-        if (req.user != req.params.userId) return res.status(403).send({ status: false, msg: 'you are not authorized' })
+        if (req.user != req.params.userId) return res.status(403).send({ status: false, message: 'you are not authorized' })
 
         let user = await userModel.findById(req.params.userId);
-        // !  status code doubt
-        if (!user) return res.status(404).send({ status: false, msg: 'no user found' })
+       
+        if (!user) return res.status(404).send({ status: false, message: 'no user found' })
 
-        if (!isValidRequestBody(req.body)) return res.status(400).send({ status: false, msg: "enter the order details" })
         let data = req.body;
+        if (!isValidRequestBody(req.body)) return res.status(400).send({ status: false, message: "enter the order details" })
 
         let totalQuantity = 0;
-        // can use forEach, for loop also
+      
         data.items.map(item => totalQuantity += item.quantity)
 
         data.totalQuantity = totalQuantity;
 
         let order = await orderModel.create(data)
-        return res.status(201).send({ status: true, msg: "order created successfully", data: order })
+        return res.status(201).send({ status: true, message: "order created successfully", data: order })
 
     } catch (error) {
-        return res.status(500).send({ status: false, msg: error.message })
+        return res.status(500).send({ status: false, message: error.message })
     }
 }
 
@@ -44,7 +44,7 @@ const upadateOrder = async function (req, res) {
             return res.status(404).send({ status: "false", message: "no user found" })
         }
         if (req.user != userId) {
-            return res.status(401).send({ status: false, message: "You are not authorized" })
+            return res.status(403).send({ status: false, message: "You are not authorized" })
         }
         const orderDetails = req.body
         if (!isValidRequestBody(orderDetails)) {
@@ -52,7 +52,7 @@ const upadateOrder = async function (req, res) {
         }
         const isOrderAvailable = await orderModel.findOne({ userId: userId })
         if (!isOrderAvailable) {
-            return res.status(400).send({ status: "false", message: "No Order available for user" })
+            return res.status(404).send({ status: "false", message: "No Order available for user" })
         }
         const { orderId, status } = orderDetails
         if (!isValidObjectId(orderId)) {
